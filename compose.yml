@@ -1,0 +1,53 @@
+name: dvd-rental
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: dvd_rental
+      MYSQL_USER: dvd_rental
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    command: ["--innodb-buffer-pool-size=128M", "--max-connections=80"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks: [database]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    mem_limit: 768m
+    restart: unless-stopped
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:mysql://db:3306/dvd_rental
+      DB_USER: dvd_rental
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      RENTAL_OVERDUE_DAILY_RATE: ${RENTAL_OVERDUE_DAILY_RATE:-1.50}
+      RENTAL_TIME_ZONE: ${RENTAL_TIME_ZONE:-Europe/London}
+      API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
+    networks: [database, web]
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 512m
+    restart: unless-stopped
+  web:
+    build: ./frontend
+    ports:
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8084}:80"
+    networks: [web]
+    depends_on:
+      backend:
+        condition: service_healthy
+    mem_limit: 128m
+    restart: unless-stopped
+volumes:
+  mysql_data:
+networks:
+  database:
+    internal: true
+  web:

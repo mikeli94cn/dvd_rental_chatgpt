@@ -1,46 +1,44 @@
-# Implementation plan
+# Implementation progress
 
-## Repository inspection
+The original repository contained only doc/PROJECT_SPEC.md. The initial foundation
+introduced a public catalog, schema migration, security defaults, and architecture
+planning, with three passing tests and jar packaging. Docker access was initially
+blocked and became available outside the execution sandbox on 2026-11-16.
 
-The repository initially contained only `doc/PROJECT_SPEC.md`, with no code, commits,
-or repository-specific agent instructions. Preserve that original specification.
+## Current implementation
 
-## Decisions and assumptions
+- Modular Java 21 backend with all eight feature packages.
+- Database accounts/roles/customer profiles, secure session login/logout and CSRF.
+- Explicit dev-profile administrator bootstrap and admin-only staff creation.
+- Movie/genre CRUD, physical inventory, availability, and guarded state changes.
+- Transactional multi-copy rentals, price snapshots, customer ownership, staff returns,
+  loss/damage/maintenance handling, overdue charges and operational reports.
+- Real MySQL Testcontainers integration coverage including concurrent HTTP allocation.
+- React/TypeScript/Vite/Ant Design customer and administrative pages using real APIs.
+- Dockerfiles, private MySQL network/volume, Nginx, health checks, and GitHub Actions.
+- Architecture, API, database, business-rule, deployment, testing and learning docs.
 
-- Modular monolith, Java 21, MySQL 8.4, same-origin React application behind Nginx.
-- Spring Boot 4.1.2 rather than 3.x: Spring's 3.5.16 release announcement directs
-  users requiring OSS support to 4.0/4.1. Java 21 remains supported by Boot 4.1.
-  Boot manages dependency versions; springdoc 3.2.0 is its Boot 4 compatible line.
-- Sources: https://spring.io/blog/2026/06/25/spring-boot-3-5-16-available-now/
-  https://docs.spring.io/spring-boot/system-requirements.html and https://springdoc.org/.
-- One physical location, GBP initially, no shipping or payment gateway.
-- Calendar dates in Europe/London; a due date is inclusive, overdue days start the
-  following date. Daily rental periods are 1–30 days. Confirm policy before production.
-- One role per account initially; staff are not automatically customer accounts.
-- No automatic Git commits, deployments, or production account creation.
+## Assumptions
 
-## Milestones
+One physical collection/return counter; collection occurs when a rental is created.
+No shipping, payment capture, replacement fees, or reservation expiry. GBP pricing,
+Europe/London calendar dates, 1–30 day periods, maximum 10 copies per order. One role
+per account; staff use a separate customer account if they want to rent DVDs. Customer
+self-registration can never grant privileged roles. Bootstrap never resets accounts.
 
-1. **Foundation (in progress):** project, architecture/model documentation, public
-   catalog, Flyway, secure defaults, error handling, and verified build.
-2. **Identity and administration:** database accounts and roles, customer registration,
-   session login/logout, CSRF token endpoint, ownership checks, development bootstrap,
-   movie/genre/inventory administration; MySQL integration and security tests.
-3. **Rentals:** transactional allocation with pessimistic locks in ID order, snapshot
-   prices, customer history, staff returns/inspection, overdue pricing, reports.
-   Prove double allocation is impossible using concurrent real MySQL transactions.
-4. **Frontend:** React/TypeScript/Vite/Ant Design, customer and staff workflows,
-   same-origin session integration and visible loading/error states.
-5. **Release:** integration suite, frontend build, CI, Docker/Nginx/Compose, operational
-   docs, end-to-end acceptance checks.
+Spring Boot 4.1.2 preserves Java 21 while replacing the now-ended OSS Boot 3.5 baseline.
+Catalog and inventory administration, returns, reports, and customer contact updates
+are available to STAFF and ADMIN. Only ADMIN can create privileged staff accounts.
 
-Each milestone must record actual verification and remaining gaps. Unit tests alone
-cannot establish MySQL compatibility, authentication safety, or concurrency correctness.
+## Verification and handoff
 
-## Foundation handoff
+Local verification completed: 14 backend tests, executable jar, real MySQL migrations
+and concurrency, frontend type-check/build, healthy three-service Compose startup,
+and the complete Chromium customer/staff browser journey. See docs/testing.md for
+results, environment, and actual limitations. All functional MVP acceptance criteria
+have local verification evidence. GitHub Actions is configured but has not run on
+GitHub, and no production deployment or Git commit was performed.
 
-Catalog implementation, schema migration, security defaults, and documentation are
-in place. Final Maven packaging and three JUnit 5 tests passed. Foundation remains
-open for real MySQL migration, HTTP, and security integration checks; host Docker
-socket access is denied. Next implementation work is database-backed identity and
-administrator catalog/inventory writes, followed by the rental workflow.
+Potential follow-up work: reduce the frontend bundle through route/vendor splitting;
+configure the target server's TLS, backups, and production account lifecycle. These
+do not block the verified local collection/return MVP.

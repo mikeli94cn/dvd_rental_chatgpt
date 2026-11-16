@@ -15,6 +15,7 @@ spring:
   flyway:
     enabled: true
 server:
+  port: 8084
   servlet:
     session:
       timeout: 30m
@@ -32,6 +33,10 @@ management:
       show-details: never
 springdoc:
   api-docs:
+    path: /api/v1/admin/openapi
     enabled: ${API_DOCS_ENABLED:false}
   swagger-ui:
     enabled: ${API_DOCS_ENABLED:false}
+rental:
+  overdue-daily-rate: ${RENTAL_OVERDUE_DAILY_RATE:1.50}
+  time-zone: ${RENTAL_TIME_ZONE:Europe/London}

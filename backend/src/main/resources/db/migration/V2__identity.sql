@@ -1,0 +1,19 @@
+CREATE TABLE roles (
+    name VARCHAR(20) NOT NULL PRIMARY KEY
+);
+INSERT INTO roles (name) VALUES ('CUSTOMER'), ('STAFF'), ('ADMIN');
+CREATE TABLE users (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(254) NOT NULL UNIQUE,
+    password_hash VARCHAR(100) NOT NULL,
+    role_name VARCHAR(20) NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    FOREIGN KEY (role_name) REFERENCES roles(name)
+);
+CREATE TABLE customers (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    name VARCHAR(120) NOT NULL,
+    phone VARCHAR(40),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

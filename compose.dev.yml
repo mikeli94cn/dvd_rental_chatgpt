@@ -1,0 +1,8 @@
+# Local HTTP only. Never use this override on a public server.
+services:
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      COOKIE_SECURE: "false"
+      DEV_ADMIN_EMAIL: ${DEV_ADMIN_EMAIL:?Set DEV_ADMIN_EMAIL in .env for local bootstrap}
+      DEV_ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD:?Set DEV_ADMIN_PASSWORD in .env for local bootstrap}

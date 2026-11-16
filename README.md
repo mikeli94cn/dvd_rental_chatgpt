@@ -1,42 +1,74 @@
 # DVD Rental System
 
-A physical DVD rental application for customer collection and staff-confirmed returns.
-The requirements are preserved in [the project specification](doc/PROJECT_SPEC.md).
+A modular Java/React application for physical DVD rentals with local collection,
+customer accounts, staff inspection returns, and inventory management.
+Original requirements: [project specification](doc/PROJECT_SPEC.md).
 
-## Current implementation
+## Technology and architecture
 
-Backend foundation: Java 21, Spring Boot 4.1.2, Spring MVC, JPA, Flyway, MySQL 8.4,
-Spring Security, Actuator, and springdoc 3.2.0. Public catalog reads support bounded
-pagination, title search, and an allowlist of sort fields. Every other route is denied
-until database-backed identity is implemented. No default user is created.
+Java 21, Spring Boot 4.1.2, MVC/Security/JPA, MySQL 8.4, Flyway, Maven,
+JUnit Jupiter/Mockito/Testcontainers, Actuator, and springdoc. React 19, TypeScript,
+Vite, React Router, and Ant Design. Docker Compose runs MySQL, the backend,
+and Nginx serving the frontend and proxying the API on one origin.
 
-This is an incremental implementation; registration, rental workflows, React UI, and
-production deployment are not implemented yet. See [the plan](docs/implementation-plan.md).
+Boot 4 replaces the specification's 3.x baseline because Spring's 3.5.16 release
+announcement recommends 4.x for ongoing OSS support. Java remains at 21.
+See [the architecture](docs/architecture.md) for the compatibility decision.
 
-## Run the backend
+## Start locally with Docker
 
-Prerequisites: Java 21, Maven 3.6.3+, and an accessible MySQL 8.4 database.
-Create a database named `dvd_rental` and a dedicated user with schema migration privileges.
-Supply your own password; do not commit secrets.
-
-```bash
-export DB_URL=jdbc:mysql://localhost:3306/dvd_rental
-export DB_USER=dvd_rental
-export DB_PASSWORD='your-local-database-password'
-# Only for local HTTP development; production must use HTTPS and secure cookies.
-export COOKIE_SECURE=false
-mvn -f backend/pom.xml spring-boot:run
-```
-
-Flyway applies migrations on startup; Hibernate validates the schema.
-No sample movies are inserted into production data.
+Prerequisites: Docker Engine with Compose v2 and access to the Docker daemon.
 
 ```bash
-curl 'http://localhost:8080/api/v1/movies?query=Alien&page=0&size=20&sort=title'
-curl http://localhost:8080/actuator/health
-mvn -f backend/pom.xml test
-mvn -f backend/pom.xml package
+cp .env.example .env
 ```
 
-Swagger endpoints are disabled by default. OpenAPI dependency is installed; access
-rules for development documentation will be added with identity configuration.
+Edit `.env`: provide distinct `DB_PASSWORD` and `MYSQL_ROOT_PASSWORD` values,
+and set `DEV_ADMIN_EMAIL` and a `DEV_ADMIN_PASSWORD` of 12+ characters and at
+most 72 UTF-8 bytes. Use locally generated secrets; the example has no defaults.
+
+```bash
+docker compose -f compose.yml -f compose.dev.yml up --build -d --wait
+```
+
+Visit **http://localhost:8084**. Sign in with the development administrator account.
+Create genres and movies under **Staff workspace**, then add physical copies in
+**Inventory** using the movie ID and a unique barcode. Register a separate customer
+account to browse, add DVDs to the basket, and confirm a rental. Staff confirm returns
+after inspection. No movies or customer data are silently seeded.
+
+The local override enables HTTP cookies and the `dev` profile. Existing accounts are
+not overwritten and their passwords are not reset on subsequent startup.
+
+```bash
+docker compose -f compose.yml -f compose.dev.yml logs -f backend
+docker compose -f compose.yml -f compose.dev.yml down
+```
+
+The named database volume survives `down`. Do not delete it unless you intend to
+remove all data. Production setup and HTTPS are described in [deployment](docs/deployment.md).
+
+## Verify
+
+Prerequisites: Java 21, Maven 3.6.3+, Node 22.12+ (24 recommended), and Docker.
+
+```bash
+mvn -B -ntp -f backend/pom.xml verify
+npm --prefix frontend ci
+npm --prefix frontend run build
+```
+
+The Maven suite starts a disposable MySQL 8.4 container. Docker is required; database
+and concurrency tests fail rather than silently skipping when it is unavailable.
+Browser verification against a disposable local stack is documented in [testing](docs/testing.md).
+
+## Documentation
+
+- [Architecture and feature responsibilities](docs/architecture.md)
+- [Database and ER model](docs/database.md)
+- [API and session/CSRF examples](docs/api.md)
+- [Business rules and transitions](docs/business-rules.md)
+- [Deployment and recovery](docs/deployment.md)
+- [Testing and verification status](docs/testing.md)
+- [Learning guide](docs/learning-guide.md)
+- [Implementation progress](docs/implementation-plan.md)
